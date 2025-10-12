@@ -1,4 +1,4 @@
-﻿using Bogus;
+using Bogus;
 using Keda.Samples.Dotnet.Contracts;
 using Microsoft.Azure.ServiceBus;
 using Newtonsoft.Json;
@@ -10,7 +10,7 @@ namespace Keda.Samples.Dotnet.OrderGenerator
 {
     class Program
     {
-        private const string ConnectionString = "<<Connection String>>";
+        private const string ConnectionString = "<YOUR_SERVICE_BUS_CONNECTION_STRING>";
         
         static async Task Main(string[] args)
         {
