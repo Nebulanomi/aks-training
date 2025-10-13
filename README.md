@@ -6,7 +6,7 @@
 
 ## Lab 1: Getting started with Containers
 
-1) [Open the Docker playground on KataKoda](https://www.katacoda.com/courses/docker/playground)
+1) [Open the Docker playground on KataKoda](https://www.katacoda.com/courses/docker/playground).
 
 2) Run basic docker CLI commands:
 
@@ -25,7 +25,9 @@
    - Try a few of docker commands.
 
    ```
-   docker exec -it <Container ID> /bin/sh
+   docker exec \
+   -it <Container ID> /bin/sh
+
    docker pull debian
    docker rmi imageName
    ```
@@ -36,7 +38,7 @@
 
 2) Create a dedicated resource group for the labs in the portal or the CLI:
 
-   - All resources will be housed here:
+   - All resources will be housed here.
 
    ```
    az group create \
@@ -46,11 +48,13 @@
 
 3) Create a Container Registry in the Azure Portal using a unique name:
    
-   - Alternatively, use CLI. Make a note of the ACR name.
+   - Alternatively, use CLI.
+   - Make a note of the ACR name.
    - This will be used through the course.
 
    ```
-   az acr create --resource-group aks-training-rg \
+   az acr create \
+   --resource-group aks-training-rg \
    --name <yourACRName> \
    --sku Basic  \
    --admin-enabled
@@ -60,6 +64,7 @@
 
    ```
    git clone https://github.com/ManojG1978/aks-training.git
+   
    cd aks-training/HelloWorldMVC
    ```
 
@@ -67,7 +72,7 @@
 
    ```
    az acr build \
-   --registry yourACRName \
+   --registry <yourACRName> \
    --image helloworld-mvc:1.0 \
    .
    ```
@@ -109,7 +114,8 @@
    ``` bash
    az acr build \
    --registry $ACR_NAME \
-   --image helloworld:1.0 .
+   --image helloworld:1.0 \
+   .
    ```
 
 5) Attach the ACR to the AKS Cluster:
@@ -139,13 +145,18 @@
 8) Deploy HelloWorld Pod from the manifest file:
 
    ``` bash
-   kubectl create -f ./k8s-pod.yaml
+   kubectl create \
+   -f ./k8s-pod.yaml
    ```
 
 9) Try some imperative commands with Kubectl like:
 
    ``` bash
-   kubectl run -i --tty busybox --image=busybox -- sh
+   kubectl run \
+   -i \
+   --tty busybox \
+   --image=busybox \
+   -- sh
    ```
 
 ## Lab 4: Deploying K8S Service and Load balancer
@@ -159,7 +170,8 @@
 3) Deploy the service (an ASP.NET Core Application):
 
    ``` bash
-   kubectl create -f k8s-deploy.yaml
+   kubectl create \
+   -f k8s-deploy.yaml
    ```
    
 4) Investigate the service and the deployment resources:
@@ -219,13 +231,15 @@
 3) If you already have another deployment of the voting app from the previous exercise, delete it:
 
    ``` bash
-   kubectl delete -f k8s-deploy-aks.yaml
+   kubectl delete \
+   -f k8s-deploy-aks.yaml
    ```
 
 4) Deploy the version of voting application, which includes health checks included:
 
    ``` bash
-   kubectl create -f k8s-deploy-healthchecks.yaml
+   kubectl create \
+   -f k8s-deploy-healthchecks.yaml
    ```
 
 5) Investigate the service and the deployment resources:
@@ -246,7 +260,8 @@
 2) Deploy a pod which stresses memory:
 
    ``` bash
-   kubectl create -f k8s-pod-limits.yaml
+   kubectl create \
+   -f k8s-pod-limits.yaml
    ```
 
 3) Investigate the Pod lifecycle and check that the POD is terminated due to OOM limits:
@@ -266,7 +281,8 @@
    - 3 such executions complete the overall job.
 
    ``` bash
-   kubectl create -f ./k8s-job.yaml
+   kubectl create \
+   -f ./k8s-job.yaml
    ```
 
 3) Investigate the jobs, notice parallelism:
@@ -274,7 +290,8 @@
    - Play around with commands and notice how the *backoffLimit* takes effect.
 
    ``` bash
-   kubectl get jobs --watch
+   kubectl get jobs \
+   --watch
    ```
 
 4) Open *k8s-cronjob.yaml* using the built-in code editor of the shell.
@@ -284,14 +301,17 @@
 5) Create the Cronjob from the manifest:
 
    ``` bash
-   kubectl create -f ./k8s-cronjob.yaml
+   kubectl create \
+   -f ./k8s-cronjob.yaml
    ```
 
 6) Investigate the jobs, they run approximately every minute:
 
    ``` bash
    kubectl get cronjob
-   kubectl get jobs --watch
+   
+   kubectl get jobs \
+   --watch
    ```
 
 ## Lab 9: Implementing Persistent Volumes
@@ -332,7 +352,7 @@
    --connection-string $AZURE_STORAGE_CONNECTION_STRING
    ```
 
-4) Extract the Storage account key and create a secret.
+4) Extract the Storage account key and create a secret:
 
    - This secret will be referenced by the pod volume.
 
@@ -350,17 +370,20 @@
    --from-literal=azurestorageaccountkey=$STORAGE_KEY
    ```
 
-5) Deploy the version of the voting app which has volumes attached to the redis pods.
+5) Deploy the version of the voting app which has volumes attached to the redis pods:
 
    - Make sure you update the image corresponding to your ACR.
-   - This manifest file creates the underlying Persistent Volume and Persistent Volume Claims (Delete any previous deployment of the voting app if they are already running)
+   - This manifest file creates the underlying Persistent Volume and Persistent Volume Claims (Delete any previous deployment of the voting app if they are already running).
 
    ``` bash
-   kubectl create -f ./k8s-deploy-aks-pv.yaml
-   kubectl delete -f ./k8s-deploy-aks-pv.yaml # Delete old deployments
+   kubectl create \
+   -f ./k8s-deploy-aks-pv.yaml
+
+   kubectl delete \
+   -f ./k8s-deploy-aks-pv.yaml # Delete old deployments
    ```
 
-6) Investigate the K8s objects.
+6) Investigate the K8s objects:
 
    - Check the redis pod and ensure the volume is mounted.
 
@@ -369,17 +392,18 @@
    kubectl describe pod <yourredispodName>
    ```
 
-7) Try adding some votes in the app.
+7) Try adding some votes in the app:
 
-   - Delete the redis pod now. K8s will recreate the pod and mount the volume again.
+   - Delete the redis pod now.
+   - K8s will recreate the pod and mount the volume again.
    - However, when you access the application, the previous data would show up.
    - Without Persistent volumes, this data would have been lost permanently.
 
    ``` bash
-   kubectl delete pod yourredispodName
+   kubectl delete pod <yourredispodName>
    ```
 
-   - [For more information, check the AKS Doc sample](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume)
+- [For more information, check the AKS Doc sample](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume)
 
 ## Lab 10: Leveraging Secrets
 
@@ -399,7 +423,8 @@
    - In this scenario, secrets are injected into the pod as environment variables and the pod basically echoes the values on the console.
 
    ``` bash
-   kubectl create -f ./k8s-secrets-env.yaml
+   kubectl create \
+   -f ./k8s-secrets-env.yaml
    ```
 
 3) Check the pod logs to see the un-encrypted values printed to the console:
@@ -498,7 +523,8 @@
 
 8) Create the *ServiceProviderClass* object mapped to the managed identity:
 
-   - Open the *k8s-secretprovider-mi.yaml* in the Code editor (Secrets folder) and update  *keyvaultName* with the name of the vault you created, and *tenantId* with your tenant ID (run *az account list* for getting tenant ID and subscription ID).
+   - Open the *k8s-secretprovider-mi.yaml* in the Code editor (Secrets folder).
+   - Update  *keyvaultName* with the name of the vault you created, and *tenantId* with your tenant ID (run *az account list* for getting tenant ID and subscription ID).
    - Delete the ServiceProvider object if it already exists and recreate.
 
    ``` bash
@@ -550,7 +576,8 @@
    - Submit the Certificate Signing Request to K8s.
 
    ``` bash
-   kubectl create -f k8s-csr.yaml
+   kubectl create \
+   -f k8s-csr.yaml
    ```
 
 3) Verify the request is still pending:
@@ -827,7 +854,7 @@
       -y curl
       ```
 
-12) Access curl -L http://10.241.0.4 (replace with the private IP from 8) from the pod and verify the HTML returned:
+12) Access *curl -L http://10.241.0.4* (replace with the private IP from 8) from the pod and verify the HTML returned:
 
       ``` bash
       curl \
