@@ -435,93 +435,71 @@
 
 ## Lab 11: Integrating with Azure Key Vault
 
-1) Install the secrets provider for the cluster:
-
-   ``` bash
-   az aks enable-addons \
-   --addons azure-keyvault-secrets-provider \
-   --name <cluster name> \
-   --resource-group aks-training
-   ```
-
-2) Enable Pod Identity (Preview):
-   
-   ``` bash
-   az feature register \
-   --name EnablePodIdentityPreview \
-   --namespace Microsoft.ContainerService
-   ```
-
-3) Install preview extensions on CLI:
-
-   ``` bash
-   az extension add \
-   --name aks-preview
-   
-   az extension update \
-   --name aks-preview
-   ```
-
-4) Enable Pod Identity in existing cluster:
+1) Enable Workload Identity and Key Vault CSI driver:
 
    ``` bash
    az aks update \
-   -g aks-training \
-   -n <cluster name> \
-   --enable-pod-identity
+      --name myAksCluster \
+      --resource-group myResourceGroup \
+      --enable-oidc-issuer \
+      --enable-workload-identity \
+      --enable-secret-rotation
+
+   az aks enable-addons \
+      --addons azure-keyvault-secrets-provider \
+      --name <cluster name> \
+      --resource-group aks-training
    ```
 
-5) Create a Key vault:
+2) Create a Key vault:
 
    ``` bash
    az keyvault create \
-   -n <vault name> \
-   -g aks-training \
-   -l eastus
+     --name myKeyVault \
+     --resource-group myResourceGroup \
+     --location eastus \
+     --enable-rbac-authorization true
    ```
 
-6) Create a user defined managed identity and an associated pod identity:
+3) Create a user defined managed identity and an associated pod identity:
 
    ``` bash
    export IDENTITY_RESOURCE_GROUP="aks-training-rg"
    export IDENTITY_NAME="application-identity"
 
    az identity create \
-   --resource-group ${IDENTITY_RESOURCE_GROUP} \
-   --name ${IDENTITY_NAME}
+      --resource-group $IDENTITY_RESOURCE_GROUP \
+      --name $IDENTITY_NAME
 
-   export IDENTITY_CLIENT_ID="$(az identity show \
-      -g ${IDENTITY_RESOURCE_GROUP} \
-      -n ${IDENTITY_NAME} \
+   export IDENTITY_CLIENT_ID=$(az identity show \
+      -g $IDENTITY_RESOURCE_GROUP \
+      -n $IDENTITY_NAME \
       --query clientId \
-      -otsv)"
+      -otsv)
       
-   export IDENTITY_RESOURCE_ID="$(az identity show \
-      -g ${IDENTITY_RESOURCE_GROUP} \
-      -n ${IDENTITY_NAME} \
+   export IDENTITY_RESOURCE_ID=$(az identity show \
+      -g $IDENTITY_RESOURCE_GROUP \
+      -n $IDENTITY_NAME \
       --query id \
-      -otsv)"
+      -otsv)
 
    export POD_IDENTITY_NAMESPACE="podIdentity"
-
-   az aks pod-identity add \
-   --resource-group $IDENTITY_RESOURCE_GROUP \
-   --cluster-name aks-training \
-   --namespace ${POD_IDENTITY_NAMESPACE} \
-   --name ${IDENTITY_NAME} \
-   --identity-resource-id ${IDENTITY_RESOURCE_ID}
    ```
 
-7) Assign permissions to the new identity to enable it to read your key vault:
+4) Assign permissions to the new identity to enable it to read your key vault:
  
    ``` bash
-   az keyvault set-policy \
-   -n <keyvault-name> \
-   --secret-permissions get \
-   --spn $IDENTITY_CLIENT_ID
+   az role assignment create \
+      --role "Key Vault Secrets User" \
+      --assignee-object-id $PRINCIPAL_ID \
+      --scope $(az keyvault show -n myKeyVault --query id -o tsv)   
    ```
 
-8) Create the *ServiceProviderClass* object mapped to the managed identity:
+5) Create a Kubernetes ServiceAccount federated with the Managed Identity.
+
+   - Use the *k8s-federated-service* for your pods.
+
+6) Create the *ServiceProviderClass* object mapped to the managed identity:
 
    - Open the *k8s-secretprovider-mi.yaml* in the Code editor (Secrets folder).
    - Update  *keyvaultName* with the name of the vault you created, and *tenantId* with your tenant ID (run *az account list* for getting tenant ID and subscription ID).
@@ -529,33 +507,33 @@
 
    ``` bash
    kubectl create \
-   -f k8s-secretprovider-mi.yaml
+      -f k8s-secretprovider-mi.yaml
    ```
 
-9) Create a pod that mounts secrets from the key vault:
+7) Create a pod that mounts secrets from the key vault:
 
    - Delete the pod if it already exists and then recreate.
 
    ``` bash
    kubectl create \
-   -f k8s-nginx-secrets-mi.yaml
+      -f k8s-nginx-secrets-mi.yaml
    ```
 
-10) To display all the secrets that are contained in the pod, run the following command:
+8) To display all the secrets that are contained in the pod, run the following command:
 
-      ``` bash
-      kubectl exec \
+   ``` bash
+   kubectl exec \
       -it nginx-secrets-store-inline \
       -- ls /mnt/secrets-store/
-      ```
+   ```
 
-11) To display the contents of the *connectionString* secret, run the following command:
+9) To display the contents of the *connectionString* secret, run the following command:
 
-      ``` bash
-      kubectl exec \
+   ``` bash
+   kubectl exec \
       -it nginx-secrets-store-inline \
       -- cat /mnt/secrets-store/connectionString
-      ```
+   ```
 
 - [For More information, refer to the Docs sample](https://docs.microsoft.com/en-us/azure/aks/csi-secrets-store-identity-access)
 
@@ -669,7 +647,7 @@
 
    ``` bash
    kubectl autoscale deployment vote-app-deployment \
-   --cpu=30% \
+   --cpu-percent=30% \
    --min=3 \
    --max=6
    ```
@@ -696,7 +674,7 @@
    --min-count 1 \
    --max-count 2
 
-   az aks nodepool \
+   az aks nodepool update \
    --resource-group rg-aks-training \
    --name aks-training \
    --enable-cluster-autoscaler \
